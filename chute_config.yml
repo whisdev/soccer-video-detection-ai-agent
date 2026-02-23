@@ -1,0 +1,29 @@
+Image:
+  from_base: parachutes/python:3.12
+  run_command:
+    - pip install --upgrade setuptools wheel
+    - pip install --index-url https://download.pytorch.org/whl/cu128 torch torchvision
+    - pip install "ultralytics==8.3.222" "opencv-python-headless" "numpy" "pydantic"
+    - pip install scikit-learn
+    - pip install onnxruntime-gpu
+  set_workdir: /app
+  readme: "Image for chutes"
+
+NodeSelector:
+  gpu_count: 1
+  min_vram_gb_per_gpu: 24
+  min_memory_gb: 32
+  min_cpu_count: 32
+  
+  exclude:
+    - "5090"
+    - b200
+    - h200
+    - mi300x
+
+Chute:
+  timeout_seconds: 900
+  concurrency: 4
+  max_instances: 5
+  scaling_threshold: 0.3
+  shutdown_after_seconds: 600000
