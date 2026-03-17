@@ -2,7 +2,6 @@ from concurrent.futures import ThreadPoolExecutor
 from collections import OrderedDict, defaultdict
 from typing import List, Tuple, Optional, Dict
 from sklearn.cluster import KMeans
-from pydantic import BaseModel
 from ultralytics import YOLO
 from numpy import ndarray
 from pathlib import Path
@@ -12,11 +11,14 @@ import torch.nn.functional as F
 import torch.nn as nn
 import numpy as np
 import torch
+import torchvision.transforms as T
 import yaml
 import gc
 import os
 import sys
 import cv2
+
+from .types import BoundingBox, TVFrameResult
 
 # ── Grass / kit helpers  ──────────────────────────────────────────────────────
 
@@ -919,27 +921,19 @@ def _apply_homography_refinement(
     return adjusted_kps
 
 
-# ── Pydantic models ───────────────────────────────────────────────────────────
-
-# Team assignment: 6 = team 1, 7 = team 2
-TEAM_1_ID = 6
-TEAM_2_ID = 7
-PLAYER_CLS_ID = 2
+# ── Weights path resolution ────────────────────────────────────────────────────
 
 
-class BoundingBox(BaseModel):
-    x1: int
-    y1: int
-    x2: int
-    y2: int
-    cls_id: int
-    conf: float
-    track_id: Optional[int] = None
+def _resolve_weights_path(repo_path: Path, filename: str) -> Path:
+    """Resolve model file path: weights/, repo root, or cwd."""
+    for base in [repo_path / "weights", repo_path, Path.cwd()]:
+        p = base / filename
+        if p.exists():
+            return p
+    return repo_path / "weights" / filename
 
-class TVFrameResult(BaseModel):
-    frame_id: int
-    boxes: list[BoundingBox]
-    keypoints: List[Tuple[float, float]]  # [(x, y), ...] float coordinates
+
+# ── AiAgent ────────────────────────────────────────────────────────────────────
 
 
 class AiAgent:
@@ -953,14 +947,14 @@ class AiAgent:
         self.device = device
 
         # BBox model
-        bbox_file = "player_detect.pt"
-        self.bbox_model = YOLO(Path(bbox_file) if Path(bbox_file).exists() else path_hf_repo / bbox_file)
+        bbox_path = _resolve_weights_path(path_hf_repo, "player_detect.pt")
+        self.bbox_model = YOLO(str(bbox_path))
         print("✅ BBox Model Loaded")
         global PLAYER_CLS_ID
         PLAYER_CLS_ID = _resolve_player_cls_id(self.bbox_model, PLAYER_CLS_ID)
 
         # OSNet team classifier
-        osnet_weight_path = path_hf_repo / "osnet_model.pth.tar-100"
+        osnet_weight_path = _resolve_weights_path(path_hf_repo, "osnet_model.pth.tar-100")
         if osnet_weight_path.exists():
             _OSNET_MODEL = load_osnet(device, osnet_weight_path)
             print("✅ Team Classifier Loaded (OSNet)")
@@ -968,11 +962,9 @@ class AiAgent:
             _OSNET_MODEL = None
             print(f"⚠️ OSNet weights not found at {osnet_weight_path}. Using HSV fallback.")
 
-        # Keypoints model: HRNet 
-        kp_config_file  = "hrnetv2_w48.yaml"
-        kp_weights_file = "keypoint_detect.pt"
-        config_path  = Path(kp_config_file)  if Path(kp_config_file).exists()  else path_hf_repo / kp_config_file
-        weights_path = Path(kp_weights_file) if Path(kp_weights_file).exists() else path_hf_repo / kp_weights_file
+        # Keypoints model: HRNet
+        config_path = _resolve_weights_path(path_hf_repo, "hrnetv2_w48.yaml")
+        weights_path = _resolve_weights_path(path_hf_repo, "keypoint_detect.pt")
         cfg = yaml.safe_load(open(config_path, 'r'))
         hrnet = get_cls_net(cfg)
         state = torch.load(weights_path, map_location=device, weights_only=False)

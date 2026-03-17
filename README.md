@@ -13,16 +13,27 @@ An AI agent for analyzing soccer videos: player detection, team classification, 
 - **Pitch keypoint detection** — HRNet detects field markers for homography and field normalization
 - **Kit color analysis** — Grass-aware color extraction as fallback for team differentiation
 
-## Repository Structure
+## Project Structure
 
-| File | Purpose |
-|------|---------|
-| `ai_agent.py` | Main AI agent: model orchestration, preprocessing, and prediction logic |
-| `test.py` | Test script to run detection on videos and visualize results |
-| `player_detect.pt` | YOLO weights for player detection |
-| `keypoint_detect.pt` | HRNet weights for pitch keypoint detection |
-| `osnet_model.pth.tar-100` | OSNet weights for team re-identification |
-| `hrnetv2_w48.yaml` | HRNet architecture configuration |
+```
+soccer-video-detection-ai-agent/
+├── src/
+│   └── soccer_agent/
+│       ├── __init__.py
+│       ├── agent.py          # Main AI agent (YOLO + OSNet + HRNet orchestration)
+│       └── types.py          # BoundingBox, TVFrameResult models
+├── weights/                   # Model weights (git-lfs or download separately)
+│   ├── player_detect.pt       # YOLO
+│   ├── keypoint_detect.pt     # HRNet
+│   ├── osnet_model.pth.tar-100
+│   └── hrnetv2_w48.yaml
+├── scripts/
+│   └── run_video.py           # CLI to process videos
+├── run.py                     # Entry point
+├── requirements.txt
+├── pyproject.toml
+└── README.md
+```
 
 ## Models
 
@@ -46,11 +57,25 @@ An AI agent for analyzing soccer videos: player detection, team classification, 
 
 ## Quick Start
 
-1. Install dependencies (PyTorch, Ultralytics, OpenCV, etc.)
-2. Run the test script on a video:
+1. Create a virtual environment and install dependencies:
 
 ```bash
-python test.py --video path/to/soccer_video.mp4 --output-dir ./output --save-video
+python -m venv .venv && source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+pip install -r requirements.txt
+```
+
+2. Place model weights in `weights/` (see structure above).
+
+3. Run on a video:
+
+```bash
+python run.py --video path/to/soccer_video.mp4 --output-dir ./output --save-video
+```
+
+Or use the script directly:
+
+```bash
+python scripts/run_video.py --video path/to/video.mp4
 ```
 
 ## Contact
