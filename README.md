@@ -55,6 +55,19 @@ soccer-video-detection-ai-agent/
 
 **Role in the agent:** Outputs heatmaps for field keypoints. These are mapped to a standard pitch template and refined via homography. Used for field normalization and warping (e.g., bird’s-eye view), not for player body pose.
 
+## GPU Requirements
+
+Model inference runs on **GPU** for acceptable performance. The agent uses CUDA when available (YOLO, OSNet, HRNet).
+
+| Requirement | Minimum |
+|-------------|---------|
+| **GPU** | NVIDIA GPU with CUDA support |
+| **VRAM** | 24 GB+ recommended |
+| **CUDA** | 11.8+ (matches PyTorch / Ultralytics) |
+| **cuDNN** | Compatible with your CUDA version |
+
+Without a GPU, inference falls back to CPU and will be significantly slower. For production or batch processing, a GPU machine is strongly recommended.
+
 ## Quick Start
 
 1. Create a virtual environment and install dependencies:
