@@ -93,4 +93,4 @@ python scripts/run_video.py --video path/to/video.mp4
 
 ## Contact
 
-Reach out via Telegram: [t.me/whisdev](https://t.me/whisdev)
+Reach out via Telegram: [t.me/whisdev](https://t.me/snipmaxi)
